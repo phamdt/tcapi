@@ -61,9 +61,7 @@ This error also occurs when deleting documents and the `If-Match` value is diffe
 To see an example of this behavior, an addiitonal response has been added that can be accessed outside the Apiary.io interface (e.g. curl).
 To see it, include the `image/jpeg` content-type header in your request.
 
-
 ### String [/_string]
-
 + Model
 
     + Headers
@@ -75,7 +73,6 @@ To see it, include the `image/jpeg` content-type header in your request.
             "string as document!"
 
 ### PNG [/_png]
-
 + Model
 
     + Headers
@@ -87,7 +84,6 @@ To see it, include the `image/jpeg` content-type header in your request.
             pretendThisRepresentsAnImageFile
 
 ### JPEG [/_jpeg]
-
 + Model
 
     + Headers
@@ -99,6 +95,38 @@ To see it, include the `image/jpeg` content-type header in your request.
 
             pretendThisIsADifferentImageThatHasAlreadyBeenSent
 
+### Updated [/_updated]
++ Model
+
+    + Headers
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
+            x-experience-api-version: 1.0.0
+
+    + Body
+
+            {
+                "originalProperty": "updatedValue",
+                "newProperty": "newValue"
+            }
+
+### Etag-ed Document [/_etag_document]
++ Model
+
+    + Headers
+
+            etag: someetag-dd13-4619-a327-c05fb6ece338
+    + Body
+
+            "profile document with any content-type"
+
+### Document Id List [/_documentIdList]
++ Model
+
+        [
+            "documentId1", "documentId2", "documentIdetc"
+        ]
+
 ## Group Possible Error Responses
 ### For Multiple Endpoints
 
@@ -107,7 +135,6 @@ To see it, include the `image/jpeg` content-type header in your request.
 - "{query_parameter} is not a URI": Results from an empty or malformed activity id
 
 ### For Document APIs
-
 `400 Bad Request`
 
 - "Document API POST methods must receive application/json content, not {content_type}": The code wants you to set the header appropriately but it is also possible you meant to PUT
@@ -128,7 +155,6 @@ To see it, include the `image/jpeg` content-type header in your request.
 - "This resource already exists. To PUT or POST to it requires you check the current state of the resource, then provide an appropriate If-Match header"
 
 ### For Statement API
-
 `400 Bad Request`
 
 - "Please post a single statement or a list of statements": This endpoint expects a dictionary representing one valid statement or a list of valid statements
@@ -185,22 +211,14 @@ Performing a GET on this resource provides a different response depending on the
 
 + Response 200
 
-    + Headers
-
-            etag: someetag-dd13-4619-a327-c05fb6ece338
-    + Body
-
-            "profile document with any content-type"
+    [Etag-ed Document][]
 
 + Response 200 (application/json)
 
-        [
-            "profileid1", "profileid2", "profileidetc"
-        ]
+    [Document Id List][]
 
 
 ### Activities Profile: Single Document Submission or Replacement [PUT]
-
 + Parameters
 
     +   activityId (required, string, `http://example.com/activity/tweeted`) ... [id of activity](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#acturi)
@@ -223,7 +241,6 @@ Performing a GET on this resource provides a different response depending on the
 
 ### Activities Profile: Single JSON Document Update [POST]
 #### Notes
-
 To update and merge JSON documents, use the POST method. To replace other types of documents, use PUT.
 Additionally, POSTs can only be used for xAPI version 1.0.0 on this resource.
 
@@ -234,17 +251,7 @@ Additionally, POSTs can only be used for xAPI version 1.0.0 on this resource.
 
 + Request (application/json)
 
-    + Headers
-
-            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
-            x-experience-api-version: 1.0.0
-
-    + Body
-
-            {
-                "originalProperty": "updatedValue",
-                "newProperty": "newValue"
-            }
+    [Updated][]
 
 + Response 204
 
@@ -268,7 +275,6 @@ Additionally, POSTs can only be used for xAPI version 1.0.0 on this resource.
 
 + Response 204
 
-
 # Group Agent Profile API
 The [Agent Profile API](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#agentprofapi) consists of two resources:
 
@@ -277,7 +283,6 @@ The [Agent Profile API](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#
 
 ## Agents [/TCAPI/agents{?agent}]
 ### Person Object
-
 From [xAPI](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#agentprofapi):
 
 > The Agent Profile API also includes a method to retrieve a special Object with combined information about an
@@ -304,7 +309,6 @@ Among the reasons you may choose to use this resource is to obtain a list of all
 Using the other resource, `TCAPI/_api/agents` resource would only return the most recent name within each Agent object returned.
 
 ### Agent: Single Agent Retrieval [GET]
-
 + Parameters
 
     + agent (required, json, `{"mbox": "mailto:eve@example.com"}`) ... Agent object as defined in xAPI
@@ -349,16 +353,13 @@ Performing a GET on this resource provides a different response depending on the
 
 + Response 200
 
-        "profile content"
+    [Etag-ed Document][]
 
 + Response 200 (application/json)
 
-        [
-            "profileId1ForAgent1", "profileId2ForAgent1", "profileId3ForAgent1"
-        ]
+    [Document Id List][]
 
 ### Agent Profile: Single Document Submission or Replacement [PUT]
-
 + Parameters
 
     + agent (required, json, `{"mbox": "mailto:agent@example.com"}`) ... Agent object as defined in xAPI
@@ -379,29 +380,18 @@ Performing a GET on this resource provides a different response depending on the
 + Response 204
 
 ### Agent Profile: Single JSON Document Update [POST]
-
 + Parameters
 
     + agent (required, json, `{"mbox": "mailto:agent@example.com"}`) ... Agent object as defined in xAPI
     + profileId (required, string, `anything`) ... The profile id associated with this profile
 
-+ Request
++ Request (application/json)
 
-    + Headers
-
-            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
-
-    + Body
-
-            {
-                "originalProperty": "updatedValue",
-                "newProperty": "newValue"
-            }
+    [Updated][]
 
 + Response 204
 
 ### Agent Profile: Single or Multiple Document Deletion [DELETE]
-
 + Parameters
 
     + agent (required, json, `{"mbox": "mailto:agent@example.com"}`) ... Agent object as defined in xAPI
@@ -414,7 +404,6 @@ Performing a GET on this resource provides a different response depending on the
             Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
 
 + Response 204
-
 
 # Group State API
 The [State API](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#stateapi) allows for arbitrary key / document pairs to be saved and retrieved which are related to an Activity
@@ -438,18 +427,13 @@ The [State API](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#stateapi
 
 + Response 200
 
-        "this represents state content/document specified by the given stateId that exists in the context of the specified Activity,
-        Agent, and registration (if specified)"
+    [Etag-ed Document][]
 
 + Response 200 (application/json)
 
-        [
-            "stateId1", "stateId2", "stateIdEtc"
-        ]
-
+    [Document Id List][]
 
 ### State API: Single Document Submission or Replacement [PUT]
-
 + Parameters
 
     + activityId (required, string, `http://example.com/activity/tweeted`) ... [id of activity](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#acturi)
@@ -473,7 +457,6 @@ The [State API](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#stateapi
 
 
 ### State API: Single JSON Document Update [POST]
-
 + Parameters
 
     + activityId (required, string, `http://example.com/activity/tweeted`) ... [id of activity](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#acturi)
@@ -481,24 +464,14 @@ The [State API](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#stateapi
     + stateId (required, string, `anything`) ... The id for this state, within the given context
     + registration (optional, UUID, `"ec531277-b57b-4c15-8d91-d292c5b2b8f7"`) ... The registration id associated with this state
 
-+ Request
++ Request (application/json)
 
-    + Headers
-
-            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
-
-    + Body
-
-            {
-                "originalProperty": "updatedValue",
-                "newProperty": "newValue"
-            }
+    [Updated][]
 
 + Response 204
 
 
 ### State API: Delete State Single or Multiple Document [DELETE]
-
 + Parameters
 
     + activityId (required, string, `http://example.com/activity/tweeted`) ... [id of activity](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#acturi)
@@ -512,7 +485,6 @@ The [State API](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#stateapi
             Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
 
 + Response 204
-
 
 # Group Statement API
 [The Statement API](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#stmtapi) is the core functionality of the xAPI and likewise WaxLRS.
@@ -531,7 +503,6 @@ However, elsewhere in the standard, it states:
 In this case, WaxLRS does indeed have a fully conformat implementation of 0.95. As such, 0.95 statements are accepted.
 
 ## Statement [/TCAPI/statements{?statementId,voidedStatementId,agent,verb,activity,registration,related_activities,related_agents,since,until,limit,format,attachments,ascending}]
-
 + Model (application/json)
 
     + Headers
@@ -557,9 +528,7 @@ In this case, WaxLRS does indeed have a fully conformat implementation of 0.95. 
                 }
             }
 
-
 ### Statement API: Single or Multiple Statement Retrieval [GET]
-
 + Request
 
     + Headers
@@ -626,7 +595,6 @@ In this case, WaxLRS does indeed have a fully conformat implementation of 0.95. 
 
 ### Statement API: Single Statement Submission or Replacement [PUT]
 #### Notes
-
 If submitting a statement with PUT, you must include a specific statementId.
 
 + Parameters
@@ -638,7 +606,6 @@ If submitting a statement with PUT, you must include a specific statementId.
     [Statement][]
 
 + Response 204
-
 
 ### Statement API: Single or Multiple Statement Submission [POST]
 #### Notes
@@ -656,4 +623,3 @@ POST requests expect a valid dictionary representing one statement or a list of 
 + Response 200
 
         "7a1e4fe9-611e-48fb-8c72-0f4a1c2b1037"
-
