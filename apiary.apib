@@ -61,7 +61,8 @@ This error also occurs when deleting documents and the `If-Match` value is diffe
 To see an example of this behavior, an addiitonal response has been added that can be accessed outside the Apiary.io interface (e.g. curl).
 To see it, include the `image/jpeg` content-type header in your request.
 
-### String [/_string]
+### Document Models
+#### String [/_string]
 + Model
 
     + Headers
@@ -72,7 +73,7 @@ To see it, include the `image/jpeg` content-type header in your request.
 
             "string as document!"
 
-### PNG [/_png]
+#### PNG [/_png]
 + Model
 
     + Headers
@@ -83,7 +84,7 @@ To see it, include the `image/jpeg` content-type header in your request.
 
             pretendThisRepresentsAnImageFile
 
-### JPEG [/_jpeg]
+#### JPEG [/_jpeg]
 + Model
 
     + Headers
@@ -95,7 +96,7 @@ To see it, include the `image/jpeg` content-type header in your request.
 
             pretendThisIsADifferentImageThatHasAlreadyBeenSent
 
-### Updated [/_updated]
+#### Updated [/_updated]
 + Model
 
     + Headers
@@ -110,7 +111,7 @@ To see it, include the `image/jpeg` content-type header in your request.
                 "newProperty": "newValue"
             }
 
-### Etag-ed Document [/_etag_document]
+#### Etag-ed Document [/_etag_document]
 + Model
 
     + Headers
@@ -120,7 +121,7 @@ To see it, include the `image/jpeg` content-type header in your request.
 
             "profile document with any content-type"
 
-### Document Id List [/_documentIdList]
+#### Document Id List [/_documentIdList]
 + Model
 
         [
@@ -169,7 +170,6 @@ The [Activity Profile API](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.
 
 ## Activities [/TCAPI/activities{?activityId}]
 ### Activity: Retrieval [GET]
-
 + Parameters
 
     +   activityId (required, string, `http://example.com/activity/tweeted`) ... [id of activity](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#acturi)
@@ -217,7 +217,6 @@ Performing a GET on this resource provides a different response depending on the
 
     [Document Id List][]
 
-
 ### Activities Profile: Single Document Submission or Replacement [PUT]
 + Parameters
 
@@ -238,7 +237,6 @@ Performing a GET on this resource provides a different response depending on the
 
 + Response 204
 
-
 ### Activities Profile: Single JSON Document Update [POST]
 #### Notes
 To update and merge JSON documents, use the POST method. To replace other types of documents, use PUT.
@@ -254,7 +252,6 @@ Additionally, POSTs can only be used for xAPI version 1.0.0 on this resource.
     [Updated][]
 
 + Response 204
-
 
 ### Activities Profile: Single or Multiple Document Deletion [DELETE]
 #### Notes
@@ -326,7 +323,6 @@ Using the other resource, `TCAPI/_api/agents` resource would only return the mos
             "name": ["Eve Maiden", "Eve Arleigh"],
             "objectType": "Person"
         }
-
 
 ## Agents Profile [/TCAPI/agents_profile{?agent,profileId,since}]
 The Agent Profile API allows for arbitrary key / document pairs to be saved which are related to an Agent.
@@ -469,7 +465,6 @@ The [State API](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#stateapi
     [Updated][]
 
 + Response 204
-
 
 ### State API: Delete State Single or Multiple Document [DELETE]
 + Parameters
