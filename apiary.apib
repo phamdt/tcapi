@@ -18,14 +18,14 @@ For any questions or feedback feel free to use the comments feature found in eac
 
 ## Group General Information
 ### Host
-While Apiary lists the API host as http://www.waxlrs.com/, each of the endpoints below must include the main account in the url as follows:
-https://mainaccountname.waxlrs.com/
+While Apiary lists the API host as `http://www.waxlrs.com/`, each of the endpoints below must include the main account in the url as follows:
+`https://mainaccountname.waxlrs.com/`
 
 ### Authentication
 Note that each of the examples below require the usage of basic authorization as part of the request.
 
 ### Versions
-Following the versions of the xAPI, you will find that certain endpoints and methods will differ in usage if you use the 1.0.0 version instead of the 0.95. #awk
+Since we follow the 0.95 and 1.0.0 versions of the xAPI, you will find that certain endpoints and methods will differ in usage depending on which version you are using.
 Versions are distinguished by the presence of the 'x-experience-api-version' header as seen in the various examples below.
 Without the header, WaxLRS assumes you want to interact with the 0.95 implementation.
 We have provided notes where it is important to distinguish between versions throughout the documentation.
@@ -57,6 +57,47 @@ Apiary does not currently support display of multiple requests and responses thr
 When resubmitting/updating a document, you must include the appropriate `If-Match` or `If-None-Match` header with the matching etag.
 Otherwise, you will receive a `412 Precondition Failed` error response.
 This error also occurs when deleting documents and the `If-Match` value is different (though this header is otherwise optional for deleting).
+
+To see an example of this behavior, an addiitonal response has been added that can be accessed outside the Apiary.io interface (e.g. curl).
+To see it, include the `image/jpeg` content-type header in your request.
+
+
+### String [/_string]
+
++ Model
+
+    + Headers
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
+
+    + Body
+
+            "string as document!"
+
+### PNG [/_png]
+
++ Model
+
+    + Headers
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
+
+    + Body
+
+            pretendThisRepresentsAnImageFile
+
+### JPEG [/_jpeg]
+
++ Model
+
+    + Headers
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
+            If-Match: someetag-dd13-4619-a327-c05fb6ece337
+
+    + Body
+
+            pretendThisIsADifferentImageThatHasAlreadyBeenSent
 
 ## Group Possible Error Responses
 ### For Multiple Endpoints
@@ -103,15 +144,15 @@ The [Activity Profile API](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.
 ## Activities [/TCAPI/activities{?activityId}]
 ### Activity: Retrieval [GET]
 
++ Parameters
+
+    +   activityId (required, string, `http://example.com/activity/tweeted`) ... [id of activity](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#acturi)
+
 + Request
 
     + Headers
 
             Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
-
-+ Parameters
-
-    +   activityId (required, string, `http://example.com/activity/tweeted`) ... [id of activity](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#acturi)
 
 + Response 200 (application/json)
 
@@ -130,17 +171,17 @@ Performing a GET on this resource provides a different response depending on the
 - If you include only the activityId, then a list of all of the associated profile ids are retrieved.
     - The 'since' parameter can optionally be used to narrow this list by timestamp.
 
-+ Request
-
-    + Headers
-
-            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
-
 + Parameters
 
     +   activityId (required, string, `http://example.com/activity/tweeted`) ... [id of activity](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#acturi)
     +   profileId (optional, string, `anything`) ... [id associated with profile](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#actprofapi)
     +   since (optional, timestamp, `2013-02-19T15:21:10-08:00`) ... Only ids of profiles stored since the specified ISO 8601 date or datetime (exclusive) are returned
+
++ Request
+
+    + Headers
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
 
 + Response 200
 
@@ -160,41 +201,22 @@ Performing a GET on this resource provides a different response depending on the
 
 ### Activities Profile: Single Document Submission or Replacement [PUT]
 
-+ Request
-
-    + Headers
-
-            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
-
-    + Body
-
-            "string as document!"
-
-+ Request (image/png)
-
-    + Headers
-
-            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
-
-    + Body
-
-            pretendThisRepresentsAnImageFile
-
-+ Request (image/jpeg)
-
-    + Headers
-
-            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
-            If-Match: someetag-dd13-4619-a327-c05fb6ece337
-
-    + Body
-
-            pretendThisIsADifferentImageThatHasAlreadyBeenSent
-
 + Parameters
 
     +   activityId (required, string, `http://example.com/activity/tweeted`) ... [id of activity](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#acturi)
     +   profileId (required, string, `anything`) ... [id associated with profile](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#actprofapi)
+
++ Request
+
+    [String][]
+
++ Request (image/png)
+
+    [PNG][]
+
++ Request (image/jpeg)
+
+    [JPEG][]
 
 + Response 204
 
@@ -204,6 +226,11 @@ Performing a GET on this resource provides a different response depending on the
 
 To update and merge JSON documents, use the POST method. To replace other types of documents, use PUT.
 Additionally, POSTs can only be used for xAPI version 1.0.0 on this resource.
+
++ Parameters
+
+    +   activityId (required, string, `http://example.com/activity/tweeted`) ... [id of activity](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#acturi)
+    +   profileId (required, string, `anything`) ... [id associated with profile](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#actprofapi)
 
 + Request (application/json)
 
@@ -219,12 +246,6 @@ Additionally, POSTs can only be used for xAPI version 1.0.0 on this resource.
                 "newProperty": "newValue"
             }
 
-
-+ Parameters
-
-    +   activityId (required, string, `http://example.com/activity/tweeted`) ... [id of activity](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#acturi)
-    +   profileId (required, string, `anything`) ... [id associated with profile](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#actprofapi)
-
 + Response 204
 
 
@@ -234,16 +255,16 @@ Additionally, POSTs can only be used for xAPI version 1.0.0 on this resource.
 - If a profileId is provided, the associated document will be deleted
 - If a profileId is not provided, all associated documents will be deleted
 
++ Parameters
+
+    +   activityId (required, string, `http://example.com/activity/tweeted`) ... [id of activity](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#acturi)
+    +   profileId (optional, string, `anything`) ... [id associated with profile](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#actprofapi)
+
 + Request
 
     + Headers
 
             Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
-
-+ Parameters
-
-    +   activityId (required, string, `http://example.com/activity/tweeted`) ... [id of activity](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#acturi)
-    +   profileId (optional, string, `anything`) ... [id associated with profile](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#actprofapi)
 
 + Response 204
 
@@ -284,23 +305,23 @@ Using the other resource, `TCAPI/_api/agents` resource would only return the mos
 
 ### Agent: Single Agent Retrieval [GET]
 
++ Parameters
+
+    + agent (required, json, `{"mbox": "mailto:eve@example.com"}`) ... Agent object as defined in xAPI
+
 + Request
 
     + Headers
 
             Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
 
-+ Parameters
-
-    + agent (required, json, `{"mbox": "mailto:eve@example.com"}`) ... Agent object as defined in xAPI
-
 + Response 200 (application/json)
 
-            {
-                "mbox": ["mailto:a29@example.com"],
-                "name": ["Eve Maiden", "Eve Arleigh"],
-                "objectType": "Person"
-            }
+        {
+            "mbox": ["mailto:a29@example.com"],
+            "name": ["Eve Maiden", "Eve Arleigh"],
+            "objectType": "Person"
+        }
 
 
 ## Agents Profile [/TCAPI/agents_profile{?agent,profileId,since}]
@@ -314,17 +335,17 @@ Performing a GET on this resource provides a different response depending on the
 - If you include only the agent, then a list of all of the associated profile ids are retrieved.
     - The 'since' parameter can optionally be used to narrow this list by timestamp.
 
-+ Request
-
-    + Headers
-
-            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
-
 + Parameters
 
     + agent (required, json, `{"mbox": "mailto:agent@example.com"}`) ... Agent object as defined in xAPI
     + profileId (required, string, `anything`) ... The profile id associated with this profile
     + since (optional, timestamp, `2013-02-19T15:21:10-08:00`) ... Only ids of profiles stored since the specified timestamp (exclusive) are returned)
+
++ Request
+
+    + Headers
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
 
 + Response 200
 
@@ -338,18 +359,33 @@ Performing a GET on this resource provides a different response depending on the
 
 ### Agent Profile: Single Document Submission or Replacement [PUT]
 
++ Parameters
+
+    + agent (required, json, `{"mbox": "mailto:agent@example.com"}`) ... Agent object as defined in xAPI
+    + profileId (required, string, `anything`) ... The profile id associated with this profile
+
 + Request
 
-    + Headers
+    [String][]
 
-            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
++ Request (image/png)
+
+    [PNG][]
+
++ Request (image/jpeg)
+
+    [JPEG][]
+
++ Response 204
+
+### Agent Profile: Single JSON Document Update [POST]
 
 + Parameters
 
     + agent (required, json, `{"mbox": "mailto:agent@example.com"}`) ... Agent object as defined in xAPI
     + profileId (required, string, `anything`) ... The profile id associated with this profile
 
-+ Request (image/png)
++ Request
 
     + Headers
 
@@ -357,43 +393,25 @@ Performing a GET on this resource provides a different response depending on the
 
     + Body
 
-            pretendthisrepresentsanimagefile
-
-+ Response 204
-
-### Agent Profile: Single JSON Document Update [POST]
-
-+ Request
-
             {
                 "originalProperty": "updatedValue",
                 "newProperty": "newValue"
             }
 
-    + Headers
++ Response 204
 
-            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
-
+### Agent Profile: Single or Multiple Document Deletion [DELETE]
 
 + Parameters
 
     + agent (required, json, `{"mbox": "mailto:agent@example.com"}`) ... Agent object as defined in xAPI
     + profileId (required, string, `anything`) ... The profile id associated with this profile
-
-+ Response 204
-
-### Agent Profile: Single or Multiple Document Deletion [DELETE]
 
 + Request
 
     + Headers
 
             Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
-
-+ Parameters
-
-    + agent (required, json, `{"mbox": "mailto:agent@example.com"}`) ... Agent object as defined in xAPI
-    + profileId (required, string, `anything`) ... The profile id associated with this profile
 
 + Response 204
 
@@ -404,12 +422,6 @@ The [State API](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#stateapi
 ## State [/TCAPI/state{?activityId,agent,stateId,registration,since}]
 ### State API: Single or Multiple Document Retrieval [GET]
 
-+ Request
-
-    + Headers
-
-            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
-
 + Parameters
 
     + activityId (required, string, `http://example.com/activity/tweeted`) ... [id of activity](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#acturi)
@@ -418,9 +430,15 @@ The [State API](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#stateapi
     + registration (optional, UUID, `"ec531277-b57b-4c15-8d91-d292c5b2b8f7"`) ... The registration id associated with this state
     + since (optional, timestamp, `2013-02-19T15:21:10-08:00`) ... Only ids of states stored since the specified timestamp (exclusive) are returned)
 
++ Request
+
+    + Headers
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
+
 + Response 200
 
-        "state content/document specified by the given stateId that exists in the context of the specified Activity,
+        "this represents state content/document specified by the given stateId that exists in the context of the specified Activity,
         Agent, and registration (if specified)"
 
 + Response 200 (application/json)
@@ -432,12 +450,6 @@ The [State API](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#stateapi
 
 ### State API: Single Document Submission or Replacement [PUT]
 
-+ Request
-
-    + Headers
-
-            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
-
 + Parameters
 
     + activityId (required, string, `http://example.com/activity/tweeted`) ... [id of activity](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#acturi)
@@ -445,20 +457,29 @@ The [State API](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#stateapi
     + stateId (required, string, `anything`) ... The id for this state, within the given context
     + registration (optional, UUID, `"ec531277-b57b-4c15-8d91-d292c5b2b8f7"`) ... The registration id associated with this state
 
++ Request
+
+    [String][]
+
 + Request (image/png)
 
-    + Headers
+    [PNG][]
 
-            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
++ Request (image/jpeg)
 
-    + Body
-
-            pretendThisRepresentsAnImageFile
+    [JPEG][]
 
 + Response 204
 
 
 ### State API: Single JSON Document Update [POST]
+
++ Parameters
+
+    + activityId (required, string, `http://example.com/activity/tweeted`) ... [id of activity](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#acturi)
+    + agent (required, json, `{"mbox": "mailto:agent@example.com"}`) ... Agent object as defined in xAPI associated with this state
+    + stateId (required, string, `anything`) ... The id for this state, within the given context
+    + registration (optional, UUID, `"ec531277-b57b-4c15-8d91-d292c5b2b8f7"`) ... The registration id associated with this state
 
 + Request
 
@@ -473,29 +494,22 @@ The [State API](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#stateapi
                 "newProperty": "newValue"
             }
 
-+ Parameters
-
-    + activityId (required, string, `http://example.com/activity/tweeted`) ... [id of activity](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#acturi)
-    + agent (required, json, `{"mbox": "mailto:agent@example.com"}`) ... Agent object as defined in xAPI associated with this state
-    + stateId (required, string, `anything`) ... The id for this state, within the given context
-    + registration (optional, UUID, `"ec531277-b57b-4c15-8d91-d292c5b2b8f7"`) ... The registration id associated with this state
-
 + Response 204
 
 
 ### State API: Delete State Single or Multiple Document [DELETE]
+
++ Parameters
+
+    + activityId (required, string, `http://example.com/activity/tweeted`) ... [id of activity](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#acturi)
+    + agent (required, json, `{"mbox": "mailto:agent@example.com"}`) ... Agent object as defined in xAPI associated with this state
+    + registration (optional, UUID, `"ec531277-b57b-4c15-8d91-d292c5b2b8f7"`) ... The registration id associated with this state
 
 + Request
 
     + Headers
 
             Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
-
-+ Parameters
-
-    + activityId (required, string, `http://example.com/activity/tweeted`) ... [id of activity](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#acturi)
-    + agent (required, json, `{"mbox": "mailto:agent@example.com"}`) ... Agent object as defined in xAPI associated with this state
-    + registration (optional, UUID, `"ec531277-b57b-4c15-8d91-d292c5b2b8f7"`) ... The registration id associated with this state
 
 + Response 204
 
@@ -516,7 +530,34 @@ However, elsewhere in the standard, it states:
 
 In this case, WaxLRS does indeed have a fully conformat implementation of 0.95. As such, 0.95 statements are accepted.
 
-## Statements [/TCAPI/statements{?statementId,voidedStatementId,agent,verb,activity,registration,related_activities,related_agents,since,until,limit,format,attachments,ascending}]
+## Statement [/TCAPI/statements{?statementId,voidedStatementId,agent,verb,activity,registration,related_activities,related_agents,since,until,limit,format,attachments,ascending}]
+
++ Model (application/json)
+
+    + Headers
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
+
+    + Body
+
+            {
+                "id": "7a1e4fe9-611e-48fb-8c72-0f4a1c2b1037",
+                "actor": {
+                    "mbox": "mailto:jack@example.com"
+                },
+                "verb": {
+                    "id": "http://feelings.example.com/felt",
+                    "display": {
+                        "und": "felt"
+                    }
+                },
+                "object": {
+                    "mbox": "mailto:completelackofsurprise@jack.example.com",
+                    "objectType": "Agent"
+                }
+            }
+
+
 ### Statement API: Single or Multiple Statement Retrieval [GET]
 
 + Request
@@ -588,39 +629,15 @@ In this case, WaxLRS does indeed have a fully conformat implementation of 0.95. 
 
 If submitting a statement with PUT, you must include a specific statementId.
 
-+ Request (application/json)
-
-    + Headers
-
-            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
-
-    + Body
-
-            {
-                "id": "7a1e4fe9-611e-48fb-8c72-0f4a1c2b1037",
-                "actor": {
-                    "mbox": "mailto:jack@example.com"
-                },
-                "verb": {
-                    "id": "http://feelings.example.com/felt",
-                    "display": {
-                        "und": "felt"
-                    }
-                },
-                "object": {
-                    "mbox": "mailto:completelackofsurprise@jack.example.com",
-                    "objectType": "Agent"
-                }
-            }
-
 + Parameters
 
     + statementId (required, UUID, `"7a1e4fe9-611e-48fb-8c72-0f4a1c2b1037"`) ... Id of Statement to record
 
++ Request (application/json)
+
+    [Statement][]
 
 + Response 204
-
-+ Response 409
 
 
 ### Statement API: Single or Multiple Statement Submission [POST]
@@ -634,29 +651,7 @@ POST requests expect a valid dictionary representing one statement or a list of 
 
 + Request (application/json)
 
-    + Headers
-
-            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
-
-    + Body
-
-            {
-                "id": "7a1e4fe9-611e-48fb-8c72-0f4a1c2b1037",
-                "actor": {
-                    "mbox": "mailto:jack@example.com"
-                },
-                "verb": {
-                    "id": "http://feelings.example.com/felt",
-                    "display": {
-                        "und": "felt"
-                    }
-                },
-                "object": {
-                    "mbox": "mailto:brokenheart@jack.example.com",
-                    "objectType": "Agent"
-                }
-            }
-
+    [Statement][]
 
 + Response 200
 
