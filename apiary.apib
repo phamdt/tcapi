@@ -1,0 +1,664 @@
+FORMAT: 1A
+HOST: http://www.waxlrs.com
+
+# TCAPI
+The resources described here are resources that form the WaxLRS implementation of the [Experience API's (xAPI)](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md)
+core requirements and functionality.
+
+The xAPI's functionality and this documentation are divided into four sub-APIs:
+
+- [Activity Profile API](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#actprofapi)
+- [Agent Profile API](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#agentprofapi)
+- [State API](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#stateapi)
+- [Statement API](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#stmtapi)
+
+## Questions?
+We hope you find this documentation useful.
+For any questions or feedback feel free to use the comments feature found in each HTTP method or contact us through our [support page]("http://saltbox.uservoice.com/").
+
+## Group General Information
+### Host
+While Apiary lists the API host as http://www.waxlrs.com/, each of the endpoints below must include the main account in the url as follows:
+https://mainaccountname.waxlrs.com/
+
+### Authentication
+Note that each of the examples below require the usage of basic authorization as part of the request.
+
+### Versions
+Following the versions of the xAPI, you will find that certain endpoints and methods will differ in usage if you use the 1.0.0 version instead of the 0.95. #awk
+Versions are distinguished by the presence of the 'x-experience-api-version' header as seen in the various examples below.
+Without the header, WaxLRS assumes you want to interact with the 0.95 implementation.
+We have provided notes where it is important to distinguish between versions throughout the documentation.
+
+## Group Document APIs
+The first three ([Activity Profile API](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#actprofapi),
+[Agent Profile API](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#agentprofapi),
+and [State API](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#stateapi)) are further categorized as the Document APIs.
+The State API allows for a scratch space in which arbitrary information can be stored in the context of an activity, agent, and registration (if specified).
+Similarly, the Activity Profile and Agent Profile APIs allow for storage of arbitrary data relevant to specified activities and agents, respectively.
+
+### Document PUTs vs POSTs for xAPI 1.0.0
+
+- PUTs are used for document submission (creation or replacement)
+- POSTs are used only for JSON document updates or empty content
+- POSTs are not implemented for xAPI 0.95 and thus no comparison is needed
+
+As mentioned, PUTs are used to create or replace documents, where documents can be of any content-type (or any charset).
+We specifically say 'replace' for PUT and 'update' for POST because updates to a JSON file only add or change key/value pairs.
+This may be helpful particulary if a large number of JSON properties exist and you only care about updating a few rather than replacing the entire document.
+This type of functionality would of course not work on other content-types such as `image/png` and thus must be completely replaced via PUT when changes are needed.
+
+### Document Submission
+For each of the PUT requests below, a default content-type is set. However, another request/response example can be found if
+you submit a request with content-type, `image/png`, to the resource on Apiary outside of the browser (e.g. via curl).
+Apiary does not currently support display of multiple requests and responses through its interface.
+
+### If-Match/If-None-Match
+When resubmitting/updating a document, you must include the appropriate `If-Match` or `If-None-Match` header with the matching etag.
+Otherwise, you will receive a `412 Precondition Failed` error response.
+This error also occurs when deleting documents and the `If-Match` value is different (though this header is otherwise optional for deleting).
+
+## Group Possible Error Responses
+### For Multiple Endpoints
+
+`400 Bad Request`
+
+- "{query_parameter} is not a URI": Results from an empty or malformed activity id
+
+### For Document APIs
+
+`400 Bad Request`
+
+- "Document API POST methods must receive application/json content, not {content_type}": The code wants you to set the header appropriately but it is also possible you meant to PUT
+- "Document API POST methods may only be used on documents previously saved with application/json, but this one was saved with {content_type}"
+- "Cannot POST to Document API keys that do not store JSON already": Ditto
+- "Cannot POST to Document API keys with non-JSON content": Yeah, you probably meant to PUT
+
+`404 Not Found`
+
+- "Nothing found for that combination": The combination of query parameters does not match any particular item
+
+`405 Method Not Allowed`
+
+- "The method POST is not allowed for this resource": Certain resources below have no POST implementation. Others have a POST implementation for a certain xAPI version.
+
+`412 Precondition Failed`
+
+- "This resource already exists. To PUT or POST to it requires you check the current state of the resource, then provide an appropriate If-Match header"
+
+### For Statement API
+
+`400 Bad Request`
+
+- "Please post a single statement or a list of statements": This endpoint expects a dictionary representing one valid statement or a list of valid statements
+- "You may only put a single statement"
+- "Statement id given in url does not match statement id given in statement"
+
+# Group Activity Profile API
+The [Activity Profile API](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#actprofapi) consists of two resources:
+
+- Activity: For retrieving the full Activity object. Only for retrieval. Activities are only saved through Statement API
+- Activity Profile: For arbitrary key / document pairs to be saved and retrieved which are related to an Activity
+
+## Activities [/TCAPI/activities{?activityId}]
+### Activity: Retrieval [GET]
+
++ Request
+
+    + Headers
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
+
++ Parameters
+
+    +   activityId (required, string, `http://example.com/activity/tweeted`) ... [id of activity](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#acturi)
+
++ Response 200 (application/json)
+
+        {
+            "id": "http://example.com/activity/tweeted",
+            "objectType": "Activity"
+        }
+
+## Activities Profile [/TCAPI/activities/profile{?activityId,profileId,since}]
+### Activities Profile: Single or Multiple Document Retrieval [GET]
+
+### Notes
+Performing a GET on this resource provides a different response depending on the parameters included in the request.
+
+- If you include both the activityId as well as the profileId, then a single profile document is retrieved.
+- If you include only the activityId, then a list of all of the associated profile ids are retrieved.
+    - The 'since' parameter can optionally be used to narrow this list by timestamp.
+
++ Request
+
+    + Headers
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
+
++ Parameters
+
+    +   activityId (required, string, `http://example.com/activity/tweeted`) ... [id of activity](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#acturi)
+    +   profileId (optional, string, `anything`) ... [id associated with profile](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#actprofapi)
+    +   since (optional, timestamp, `2013-02-19T15:21:10-08:00`) ... Only ids of profiles stored since the specified ISO 8601 date or datetime (exclusive) are returned
+
++ Response 200
+
+    + Headers
+
+            etag: someetag-dd13-4619-a327-c05fb6ece338
+    + Body
+
+            "profile document with any content-type"
+
++ Response 200 (application/json)
+
+        [
+            "profileid1", "profileid2", "profileidetc"
+        ]
+
+
+### Activities Profile: Single Document Submission or Replacement [PUT]
+
++ Request
+
+    + Headers
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
+
+    + Body
+
+            "string as document!"
+
++ Request (image/png)
+
+    + Headers
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
+
+    + Body
+
+            pretendThisRepresentsAnImageFile
+
++ Request (image/jpeg)
+
+    + Headers
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
+            If-Match: someetag-dd13-4619-a327-c05fb6ece337
+
+    + Body
+
+            pretendThisIsADifferentImageThatHasAlreadyBeenSent
+
++ Parameters
+
+    +   activityId (required, string, `http://example.com/activity/tweeted`) ... [id of activity](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#acturi)
+    +   profileId (required, string, `anything`) ... [id associated with profile](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#actprofapi)
+
++ Response 204
+
+
+### Activities Profile: Single JSON Document Update [POST]
+#### Notes
+
+To update and merge JSON documents, use the POST method. To replace other types of documents, use PUT.
+Additionally, POSTs can only be used for xAPI version 1.0.0 on this resource.
+
++ Request (application/json)
+
+    + Headers
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
+            x-experience-api-version: 1.0.0
+
+    + Body
+
+            {
+                "originalProperty": "updatedValue",
+                "newProperty": "newValue"
+            }
+
+
++ Parameters
+
+    +   activityId (required, string, `http://example.com/activity/tweeted`) ... [id of activity](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#acturi)
+    +   profileId (required, string, `anything`) ... [id associated with profile](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#actprofapi)
+
++ Response 204
+
+
+### Activities Profile: Single or Multiple Document Deletion [DELETE]
+#### Notes
+
+- If a profileId is provided, the associated document will be deleted
+- If a profileId is not provided, all associated documents will be deleted
+
++ Request
+
+    + Headers
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
+
++ Parameters
+
+    +   activityId (required, string, `http://example.com/activity/tweeted`) ... [id of activity](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#acturi)
+    +   profileId (optional, string, `anything`) ... [id associated with profile](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#actprofapi)
+
++ Response 204
+
+
+# Group Agent Profile API
+The [Agent Profile API](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#agentprofapi) consists of two resources:
+
+- Agent: For retrieving a Person object. Only for retrieval. Agents are only saved through Statement API.
+- Agent Profile: For arbitrary key / document pairs to be saved and retrieved which are related to an Agent
+
+## Agents [/TCAPI/agents{?agent}]
+### Person Object
+
+From [xAPI](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#agentprofapi):
+
+> The Agent Profile API also includes a method to retrieve a special Object with combined information about an
+> Agent derived from an outside service, such as a directory service.
+
+
+The 'special Object' refers to the Person object.
+
+> The Person Object is very similar to an Agent Object, but instead of each attribute having a single value,
+> each attribute has an array value, and it is legal to include multiple identifying properties.
+> Note that the argument is still a normal Agent Object with a single identifier and no arrays.
+> Note that this is different from the FOAF concept of person,
+> person is being used here to indicate a person-centric view of the LRS Agent data,
+> but Agents just refer to one persona (a person in one context).
+
+
+Even if the agent in the request is not an agent recognized in WaxLRS from previous xAPI statements,
+a person object will still be returned with the information given by the request.
+
+### TCAPI/agents vs. TCAPI/_api/agents
+As you may have inferred from the blockquotes, this resource, `TCAPI/agents`, is different from our `TCAPI/_api/agents` resource
+which returns a list of Agent objects (regardless of being empty or not) as opposed to a single Person object.
+Among the reasons you may choose to use this resource is to obtain a list of all names associated with the person.
+Using the other resource, `TCAPI/_api/agents` resource would only return the most recent name within each Agent object returned.
+
+### Agent: Single Agent Retrieval [GET]
+
++ Request
+
+    + Headers
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
+
++ Parameters
+
+    + agent (required, json, `{"mbox": "mailto:eve@example.com"}`) ... Agent object as defined in xAPI
+
++ Response 200 (application/json)
+
+            {
+                "mbox": ["mailto:a29@example.com"],
+                "name": ["Eve Maiden", "Eve Arleigh"],
+                "objectType": "Person"
+            }
+
+
+## Agents Profile [/TCAPI/agents_profile{?agent,profileId,since}]
+The Agent Profile API allows for arbitrary key / document pairs to be saved which are related to an Agent.
+
+### Agent Profile: Single or Multiple Document Retrieval [GET]
+#### Notes:
+Performing a GET on this resource provides a different response depending on the parameters included in the request.
+
+- If you include both the agent as well as the profileId, then a single profile document is retrieved.
+- If you include only the agent, then a list of all of the associated profile ids are retrieved.
+    - The 'since' parameter can optionally be used to narrow this list by timestamp.
+
++ Request
+
+    + Headers
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
+
++ Parameters
+
+    + agent (required, json, `{"mbox": "mailto:agent@example.com"}`) ... Agent object as defined in xAPI
+    + profileId (required, string, `anything`) ... The profile id associated with this profile
+    + since (optional, timestamp, `2013-02-19T15:21:10-08:00`) ... Only ids of profiles stored since the specified timestamp (exclusive) are returned)
+
++ Response 200
+
+        "profile content"
+
++ Response 200 (application/json)
+
+        [
+            "profileId1ForAgent1", "profileId2ForAgent1", "profileId3ForAgent1"
+        ]
+
+### Agent Profile: Single Document Submission or Replacement [PUT]
+
++ Request
+
+    + Headers
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
+
++ Parameters
+
+    + agent (required, json, `{"mbox": "mailto:agent@example.com"}`) ... Agent object as defined in xAPI
+    + profileId (required, string, `anything`) ... The profile id associated with this profile
+
++ Request (image/png)
+
+    + Headers
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
+
+    + Body
+
+            pretendthisrepresentsanimagefile
+
++ Response 204
+
+### Agent Profile: Single JSON Document Update [POST]
+
++ Request
+
+            {
+                "originalProperty": "updatedValue",
+                "newProperty": "newValue"
+            }
+
+    + Headers
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
+
+
++ Parameters
+
+    + agent (required, json, `{"mbox": "mailto:agent@example.com"}`) ... Agent object as defined in xAPI
+    + profileId (required, string, `anything`) ... The profile id associated with this profile
+
++ Response 204
+
+### Agent Profile: Single or Multiple Document Deletion [DELETE]
+
++ Request
+
+    + Headers
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
+
++ Parameters
+
+    + agent (required, json, `{"mbox": "mailto:agent@example.com"}`) ... Agent object as defined in xAPI
+    + profileId (required, string, `anything`) ... The profile id associated with this profile
+
++ Response 204
+
+
+# Group State API
+The [State API](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#stateapi) allows for arbitrary key / document pairs to be saved and retrieved which are related to an Activity
+
+## State [/TCAPI/state{?activityId,agent,stateId,registration,since}]
+### State API: Single or Multiple Document Retrieval [GET]
+
++ Request
+
+    + Headers
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
+
++ Parameters
+
+    + activityId (required, string, `http://example.com/activity/tweeted`) ... [id of activity](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#acturi)
+    + agent (required, json, `{"mbox": "mailto:agent@example.com"}`) ... Agent object as defined in xAPI associated with this state
+    + stateId (required, string, `anything`) ... The id for this state, within the given context
+    + registration (optional, UUID, `"ec531277-b57b-4c15-8d91-d292c5b2b8f7"`) ... The registration id associated with this state
+    + since (optional, timestamp, `2013-02-19T15:21:10-08:00`) ... Only ids of states stored since the specified timestamp (exclusive) are returned)
+
++ Response 200
+
+        "state content/document specified by the given stateId that exists in the context of the specified Activity,
+        Agent, and registration (if specified)"
+
++ Response 200 (application/json)
+
+        [
+            "stateId1", "stateId2", "stateIdEtc"
+        ]
+
+
+### State API: Single Document Submission or Replacement [PUT]
+
++ Request
+
+    + Headers
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
+
++ Parameters
+
+    + activityId (required, string, `http://example.com/activity/tweeted`) ... [id of activity](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#acturi)
+    + agent (required, json, `{"mbox": "mailto:agent@example.com"}`) ... Agent object as defined in xAPI associated with this state
+    + stateId (required, string, `anything`) ... The id for this state, within the given context
+    + registration (optional, UUID, `"ec531277-b57b-4c15-8d91-d292c5b2b8f7"`) ... The registration id associated with this state
+
++ Request (image/png)
+
+    + Headers
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
+
+    + Body
+
+            pretendThisRepresentsAnImageFile
+
++ Response 204
+
+
+### State API: Single JSON Document Update [POST]
+
++ Request
+
+    + Headers
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
+
+    + Body
+
+            {
+                "originalProperty": "updatedValue",
+                "newProperty": "newValue"
+            }
+
++ Parameters
+
+    + activityId (required, string, `http://example.com/activity/tweeted`) ... [id of activity](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#acturi)
+    + agent (required, json, `{"mbox": "mailto:agent@example.com"}`) ... Agent object as defined in xAPI associated with this state
+    + stateId (required, string, `anything`) ... The id for this state, within the given context
+    + registration (optional, UUID, `"ec531277-b57b-4c15-8d91-d292c5b2b8f7"`) ... The registration id associated with this state
+
++ Response 204
+
+
+### State API: Delete State Single or Multiple Document [DELETE]
+
++ Request
+
+    + Headers
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
+
++ Parameters
+
+    + activityId (required, string, `http://example.com/activity/tweeted`) ... [id of activity](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#acturi)
+    + agent (required, json, `{"mbox": "mailto:agent@example.com"}`) ... Agent object as defined in xAPI associated with this state
+    + registration (optional, UUID, `"ec531277-b57b-4c15-8d91-d292c5b2b8f7"`) ... The registration id associated with this state
+
++ Response 204
+
+
+# Group Statement API
+[The Statement API](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#stmtapi) is the core functionality of the xAPI and likewise WaxLRS.
+More so than the other APIs, this requires a detailed knowledge of the xAPI standard.
+Specifically, if you do not already have knowledge of a properly formed xAPI statement or if you are not sure if your learning tools know how to submit valid statements,
+it may be beneficial to read through the xAPI section on "[Statements](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#statement)"
+in addition to the one on the "[Statement API](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#stmtapi)".
+
+## Different xAPI Versions
+Currently, the requirements of the xAPI note that:
+> An LRS MUST reject all Statements with a version specified that does not start with "1.0.".
+
+However, elsewhere in the standard, it states:
+> The LRS MUST reject requests with version header prior to "1.0.0" unless such requests are routed to a fully conformant implementation of the prior version specified in the header.
+
+In this case, WaxLRS does indeed have a fully conformat implementation of 0.95. As such, 0.95 statements are accepted.
+
+## Statements [/TCAPI/statements{?statementId,voidedStatementId,agent,verb,activity,registration,related_activities,related_agents,since,until,limit,format,attachments,ascending}]
+### Statement API: Single or Multiple Statement Retrieval [GET]
+
++ Request
+
+    + Headers
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
+
++ Parameters
+
+    + statementId (optional, UUID, `"7a1e4fe9-611e-48fb-8c72-0f4a1c2b1037"`) ... ID of Statement to fetch
+    + voidedStatementId (optional, UUID, `"7a1e4fe9-611e-48fb-8c72-0f4a1c2b1037"`) ... ID of voided Statement to fetch. see [Voided Statements](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#voidedStatements)
+    + agent (optional, json, `{"mbox": "mailto:eve@example.com"}`) ... Only return Statements for which the specified Agent or group is the Actor or Object of the Statement. [More information](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#stmtapiget)
+    + verb (optional, IRI, `"http://adlnet.gov/expapi/verbs/created"`) ... Filter, only return Statements matching the specified verb id
+    + activity (optional, IRI, `"http://www.example.co.uk/exampleactivity"`) ... Filter, only return Statements for which the Object of the Statement is an Activity with the specified id
+    + registration (optional, UUID, `"ec531277-b57b-4c15-8d91-d292c5b2b8f7"`) ... Filter, only return Statements matching the specified registration id. [More information](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#stmtapiget)
+    + related_activities = `False` (optional, boolean) ... Apply the Activity filter broadly. Include Statements for which the Object, any of the context Activities, or any of those properties in a contained Sub-Statement match the Activity parameter, instead of that parameter's normal behavior. Matching is defined in the same way it is for the 'Activity' parameter."
+    + related_agents = `False` (optional, boolean) ... Apply the Agent filter broadly. Include Statements for which the Actor, Object, Authority, Instructor, Team, or any of these properties in a contained Sub-Statement match the Agent parameter, instead of that parameter's normal behavior. Matching is defined in the same way it is for the 'agent' parameter.
+    + since (optional, timestamp, `2013-02-19T15:21:10-08:00`) ... Only Statements stored since the specified timestamp (exclusive) are returned
+    + until (optional, timestamp, `2013-02-19T15:21:10-08:00`) ... Only Statements stored at or before the specified timestamp are returned
+    + limit = `0` (optional, nonnegative integer) ... Maximum number of Statements to return. `0` indicates returning the maximum the server will allow which is upwards of 500
+    + format = `exact` (optional, string)
+        Currently, WaxLRS only returns statements in the `exact` format. This means we return statements in the same format as they were received regardless.
+        [See xAPI regarding other formats.](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI.md#stmtapiget)
+
+        + Values
+
+            + `ids`
+            + `exact`
+            + `canonical`
+    + attachments = `False` (optional, Boolean) ... If true, WaxLRS uses the multipart response format and includes all attachments as described previously. If false, WaxLRS sends the prescribed response with Content-Type application/json and cannot use attachments.
+    + ascending = `False` (optional, Boolean) ... If true, return results in ascending order of stored time
+
++ Response 200
+
+        {
+            "statements": [
+                {
+                    "verb": {
+                        "id": "http://example.com/verbs/completed",
+                        "display": {
+                            "en": "completed"
+                        }
+                    },
+                    "timestamp": "2014-02-18T23:34:43Z",
+                    "object": {
+                        "id": "http://example.com/activity/awesomenesstraining",
+                        "objectType": "Activity"
+                    },
+                    "authority": {
+                        "account": {
+                            "homePage": "http://youraccountname.waxlrs.com/TCAPI",
+                            "name": "juan@youraccountname"
+                        },
+                        "objectType": "Agent"
+                    },
+                    "stored": "2014-02-18T23:34:43Z",
+                    "actor": {
+                        "mbox": "mailto:chao@example.com"
+                    },
+                    "id": "93815ff4-bdca-476f-b52d-33b9f1dd27ae"
+                }
+            ]
+        }
+
+
+### Statement API: Single Statement Submission or Replacement [PUT]
+#### Notes
+
+If submitting a statement with PUT, you must include a specific statementId.
+
++ Request (application/json)
+
+    + Headers
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
+
+    + Body
+
+            {
+                "id": "7a1e4fe9-611e-48fb-8c72-0f4a1c2b1037",
+                "actor": {
+                    "mbox": "mailto:jack@example.com"
+                },
+                "verb": {
+                    "id": "http://feelings.example.com/felt",
+                    "display": {
+                        "und": "felt"
+                    }
+                },
+                "object": {
+                    "mbox": "mailto:completelackofsurprise@jack.example.com",
+                    "objectType": "Agent"
+                }
+            }
+
++ Parameters
+
+    + statementId (required, UUID, `"7a1e4fe9-611e-48fb-8c72-0f4a1c2b1037"`) ... Id of Statement to record
+
+
++ Response 204
+
++ Response 409
+
+
+### Statement API: Single or Multiple Statement Submission [POST]
+#### Notes
+POST requests expect a valid dictionary representing one statement or a list of valid dictionaries for multiple statements
+
+#### IDs
+
+- If posting a statement with an id property, the id is returned.
+- If posting a statement without an id, an id is created for the statement
+
++ Request (application/json)
+
+    + Headers
+
+            Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQZQ
+
+    + Body
+
+            {
+                "id": "7a1e4fe9-611e-48fb-8c72-0f4a1c2b1037",
+                "actor": {
+                    "mbox": "mailto:jack@example.com"
+                },
+                "verb": {
+                    "id": "http://feelings.example.com/felt",
+                    "display": {
+                        "und": "felt"
+                    }
+                },
+                "object": {
+                    "mbox": "mailto:brokenheart@jack.example.com",
+                    "objectType": "Agent"
+                }
+            }
+
+
++ Response 200
+
+        "7a1e4fe9-611e-48fb-8c72-0f4a1c2b1037"
+
